@@ -1,0 +1,53 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+
+		<!-- ✅ FIXED ROOT -->
+		<RootNamespace>warehouse_management_system</RootNamespace>
+		<AssemblyName>warehouse_management_system</AssemblyName>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <Compile Remove="Modules\test\**" />
+	  <Content Remove="Modules\test\**" />
+	  <EmbeddedResource Remove="Modules\test\**" />
+	  <None Remove="Modules\test\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Content Include="properties\launchSettings.json" />
+	</ItemGroup>
+
+
+	<!-- =============================
+       PACKAGE DEPENDENCIES
+       ============================= -->
+	<ItemGroup>
+		<PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
+		<PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
+
+		<PackageReference Include="Hangfire" Version="1.8.14" />
+		<PackageReference Include="Hangfire.SqlServer" Version="1.8.14" />
+
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.6" />
+
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.6" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.6">
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.6">
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+	</ItemGroup>
+	<ItemGroup>
+	  <Folder Include="Modules\Warehouse\Reports\" />
+	  <Folder Include="Properties\" />
+	</ItemGroup>
+
+</Project>
