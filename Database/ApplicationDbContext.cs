@@ -12,6 +12,7 @@ using warehouse_management_system.Modules.ROL.Entities;
 using warehouse_management_system.Modules.Auth.Entities;
 using warehouse_management_system.Modules.Approvals.Entities;
 using warehouse_management_system.Modules.Notifications.Entities;
+using warehouse_management_system.Shared.Common;
 
 namespace warehouse_management_system.Database;
 
@@ -70,49 +71,48 @@ public class ApplicationDbContext : DbContext
     // =========================
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
 
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // =========================
-        // 🔥 CONCURRENCY CONTROL
-        // =========================
-        modelBuilder.Entity<AppUser>().Property(x => x.RowVersion).IsRowVersion();
-        modelBuilder.Entity<Item>().Property(x => x.RowVersion).IsRowVersion();
-        modelBuilder.Entity<WarehouseEntity>().Property(x => x.RowVersion).IsRowVersion();
-        modelBuilder.Entity<Vendor>().Property(x => x.RowVersion).IsRowVersion();
-        modelBuilder.Entity<PurchaseOrder>().Property(x => x.RowVersion).IsRowVersion();
-        modelBuilder.Entity<Batch>().Property(x => x.RowVersion).IsRowVersion();
-        modelBuilder.Entity<AuditLog>().Property(x => x.RowVersion).IsRowVersion();
-        modelBuilder.Entity<Notification>().Property(x => x.RowVersion).IsRowVersion();
-        modelBuilder.Entity<ApprovalRequest>().Property(x => x.RowVersion).IsRowVersion();
-        // ADD THIS
-        modelBuilder.Entity<GRNEntity>()
-            .Property(x => x.RowVersion)
-            .IsRowVersion();
+        // ============================================================
+        // 🔥 GLOBAL CONCURRENCY CONTROL (Applies to all BaseEntity)
+        // ============================================================
 
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
+            {
+                modelBuilder.Entity(entityType.ClrType)
+                    .Property(nameof(BaseEntity.RowVersion))
+                    .IsRowVersion();
+            }
+        }
 
-        // =========================
+        // ============================================================
         // 🔥 SOFT DELETE FILTERS
-        // =========================
+        // ============================================================
+
         modelBuilder.Entity<Item>().HasQueryFilter(x => !x.IsDeleted);
         modelBuilder.Entity<WarehouseEntity>().HasQueryFilter(x => !x.IsDeleted);
         modelBuilder.Entity<Vendor>().HasQueryFilter(x => !x.IsDeleted);
         modelBuilder.Entity<PurchaseOrder>().HasQueryFilter(x => !x.IsDeleted);
         modelBuilder.Entity<Batch>().HasQueryFilter(x => !x.IsDeleted);
 
-        // =========================
-        // 🔥 BATCH RELATIONSHIP
-        // =========================
+        // ============================================================
+        // 🔥 RELATIONSHIPS
+        // ============================================================
+
         modelBuilder.Entity<Batch>()
             .HasOne(b => b.Item)
             .WithMany()
             .HasForeignKey(b => b.ItemId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // =========================
+        // ============================================================
         // 🔥 DECIMAL PRECISION STANDARDIZATION
-        // =========================
+        // ============================================================
 
         // Item
         modelBuilder.Entity<Item>()
@@ -137,20 +137,22 @@ public class ApplicationDbContext : DbContext
             .Property(x => x.QuantityReceived)
             .HasPrecision(18, 4);
 
-        // Stock
+        // Stock Ledger
         modelBuilder.Entity<StockLedger>()
             .Property(x => x.Quantity)
             .HasPrecision(18, 4);
 
+        // Stock Issue
         modelBuilder.Entity<StockIssueEntity>()
             .Property(x => x.QuantityIssued)
             .HasPrecision(18, 4);
 
+        // Warehouse Transfer
         modelBuilder.Entity<WarehouseTransferEntity>()
             .Property(x => x.Quantity)
             .HasPrecision(18, 4);
 
-        // Purchase
+        // Purchase Order
         modelBuilder.Entity<PurchaseOrderLine>()
             .Property(x => x.Quantity)
             .HasPrecision(18, 4);
@@ -167,7 +169,5 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<ReorderRequest>()
             .Property(x => x.MinimumLevel)
             .HasPrecision(18, 4);
-
-
     }
 }

@@ -9,8 +9,8 @@ public class StockLedger : BaseEntity
 
     public decimal Quantity { get; set; }
 
-    public string MovementType { get; set; } = default!;
     // IN / OUT / TRANSFER / ADJUSTMENT
+    public string MovementType { get; set; } = default!;
 
     public string ReferenceNumber { get; set; } = default!;
 }
