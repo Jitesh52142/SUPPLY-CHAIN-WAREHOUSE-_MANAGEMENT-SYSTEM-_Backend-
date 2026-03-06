@@ -51,12 +51,17 @@ public class ApprovalService : IApprovalService
         if (approval.Status != "Pending")
             throw new InvalidOperationException("Approval already completed.");
 
-        // 🔒 Validate correct role for this level
-        if (dto.UserRole != approval.CurrentRole)
+        // Validate role
+        if (!string.Equals(dto.UserRole, approval.CurrentRole, StringComparison.OrdinalIgnoreCase))
             throw new UnauthorizedAccessException(
                 $"Only {approval.CurrentRole} can approve at this level.");
 
-        if (dto.Action == "Rejected")
+        var action = dto.Action?.Trim();
+
+        // =====================
+        // REJECTION
+        // =====================
+        if (string.Equals(action, "Rejected", StringComparison.OrdinalIgnoreCase))
         {
             approval.Status = "Rejected";
             approval.ApprovedAt = DateTime.UtcNow;
@@ -66,24 +71,29 @@ public class ApprovalService : IApprovalService
             return true;
         }
 
-        if (dto.Action == "Approved")
+        // =====================
+        // APPROVAL
+        // =====================
+        if (string.Equals(action, "Approved", StringComparison.OrdinalIgnoreCase))
         {
-            // 🔹 LEVEL 1 → LEVEL 2
+            // LEVEL 1 → LEVEL 2
             if (approval.CurrentLevel == 1)
             {
                 approval.CurrentLevel = 2;
                 approval.CurrentRole = "FinanceManager";
                 approval.SLADeadline = DateTime.UtcNow.AddHours(4);
             }
-            // 🔹 LEVEL 2 → LEVEL 3
+
+            // LEVEL 2 → LEVEL 3
             else if (approval.CurrentLevel == 2)
             {
                 approval.CurrentLevel = 3;
                 approval.CurrentRole = "MedicalDirector";
                 approval.SLADeadline = DateTime.UtcNow.AddHours(4);
             }
-            // 🔹 FINAL APPROVAL
-            else
+
+            // FINAL APPROVAL
+            else if (approval.CurrentLevel == 3)
             {
                 approval.Status = "Approved";
                 approval.ApprovedAt = DateTime.UtcNow;
@@ -97,16 +107,19 @@ public class ApprovalService : IApprovalService
                     if (po != null)
                         po.Status = "Approved";
                 }
+
+                await _context.SaveChangesAsync();
+                return true;
             }
 
             await _context.SaveChangesAsync();
 
+            // Notify next approver
             await _notificationService.CreateAsync(
                 new CreateNotificationDto
                 {
                     Title = "Approval Update",
-                    Message =
-                        $"Approval moved to Level {approval.CurrentLevel} ({approval.CurrentRole})",
+                    Message = $"Approval moved to Level {approval.CurrentLevel} ({approval.CurrentRole})",
                     TargetRole = approval.CurrentRole
                 });
 

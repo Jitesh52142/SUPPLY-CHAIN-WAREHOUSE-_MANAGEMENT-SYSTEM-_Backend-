@@ -28,6 +28,7 @@ builder.Services.AddProjectServices();
 // ============================
 builder.Services.AddCors(options =>
 {
+    // Existing policy
     options.AddPolicy("AllowAll",
         policy =>
         {
@@ -35,6 +36,17 @@ builder.Services.AddCors(options =>
                 .AllowAnyOrigin()
                 .AllowAnyHeader()
                 .AllowAnyMethod();
+        });
+
+    // Angular policy
+    options.AddPolicy("AllowAngular",
+        policy =>
+        {
+            policy
+                .WithOrigins("http://localhost:4200")
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
         });
 });
 
@@ -120,8 +132,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// CORS before auth
-app.UseCors("AllowAll");
+// Apply Angular CORS
+app.UseCors("AllowAngular");
 
 app.UseAuthentication();
 app.UseAuthorization();
